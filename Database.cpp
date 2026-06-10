@@ -10,7 +10,8 @@
 sql::Connection* globalCon = nullptr;
 
 int currentUserID = 0;
-std::string currentCustomerID = "";
+int currentCustomerID = 0;
+
 
 void connectToDatabase() {
     try {

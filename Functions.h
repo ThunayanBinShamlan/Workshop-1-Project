@@ -26,7 +26,7 @@ void manageCars();
 void addCar();
 void viewCars();
 void updateCar();
-void deactivateCar();
+void deleteCar();
 void viewAvailableCars();
 
 ///////////// customer management functions////////////
@@ -35,7 +35,7 @@ void manageCustomers();
 void addCustomer();
 void viewCustomers();
 void updateCustomer();
-void deactivateCustomer();
+void deleteCustomer();
 string getCustomerName();
 void myProfile();
 void showCustomerRentalInfo();
@@ -47,8 +47,7 @@ void manageUsers();
 void addUser();
 void viewUsers();
 void updateUser();
-void deactivateUser();
-
+void deleteUser();
 
 ////////////// rental management functions ////////////
 

@@ -17,7 +17,7 @@ using namespace std;
 
 extern sql::Connection* globalCon;
 extern int currentUserID;
-extern string currentCustomerID;
+extern int currentCustomerID;
 
 void connectToDatabase();
 void closeDatabaseConnection();

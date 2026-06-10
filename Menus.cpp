@@ -19,9 +19,10 @@ void showMainMenu() {
         cout << "====================================\n";
         cout << "1. Login\n";
         cout << "2. Register Customer\n";
-        cout << "3. Exit\n";
+        cout << "0. Exit\n";
         cout << "Choose option: ";
         cin >> choice;
+
         if (cin.fail()) {
             cin.clear();
             cin.ignore(1000, '\n');
@@ -53,7 +54,7 @@ void showMainMenu() {
 			pauseScreen();
         }
 
-        else if (choice == 3) {
+        else if (choice == 0) {
 
             cout <<  "Exiting system...\n";
         }
@@ -63,7 +64,7 @@ void showMainMenu() {
 			pauseScreen();
         }
 
-    } while (choice != 3);
+    } while (choice != 0);
 }
 
 
@@ -83,7 +84,7 @@ void adminMenu() {
         cout << "3. Manage Cars\n";
         cout << "4. Manage Rentals\n";
         cout << "5. Reports\n";
-        cout << "6. Logout\n";
+        cout << "0. Logout\n";
         cout << "Choose option: ";
         cin >> choice;
 
@@ -120,7 +121,7 @@ void adminMenu() {
 
 
             break;
-        case 6:
+        case 0:
             cout << "Logging out...\n";
             break;
 
@@ -130,7 +131,7 @@ void adminMenu() {
 
         }
 
-    } while (choice != 6);
+    } while (choice != 0);
 }
 
 void staffMenu() {
@@ -146,7 +147,7 @@ void staffMenu() {
         cout << "2. Manage Cars\n";
         cout << "3. Manage Rentals\n";
         cout << "4. View Available Cars\n";
-        cout << "5. Logout\n";
+        cout << "0. Logout\n";
         cout << "Choose option: ";
         cin >> choice;
 
@@ -179,7 +180,7 @@ void staffMenu() {
             pauseScreen();
             break;
 
-        case 5:
+        case 0:
             cout << "Logging out...\n";
             break;
 
@@ -188,7 +189,7 @@ void staffMenu() {
             pauseScreen();
         }
 
-    } while (choice != 5);
+    } while (choice != 0);
 }
 
 void customerMenu() {
@@ -206,7 +207,7 @@ void customerMenu() {
         cout << "3. Rental History\n";
         cout << "4. View My Invoices\n";
         cout << "5. My Profile\n";
-        cout << "6. Logout\n";
+        cout << "0. Logout\n";
         cout << "Choose option: ";
         cin >> choice;
 
@@ -247,9 +248,9 @@ void customerMenu() {
             myProfile();
             break;
 
-        case 6:
+        case 0:
             cout << "Logging out...\n";
-            currentCustomerID = "";
+            currentCustomerID = 0;
             currentUserID = 0;
             break;
 
@@ -258,6 +259,6 @@ void customerMenu() {
             pauseScreen();
         }
 
-    } while (choice != 6);
+    } while (choice != 0);
 }
 

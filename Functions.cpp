@@ -55,9 +55,9 @@ string login()
     ));
 
     if (role == "customer") {
-        currentCustomerID = executeQuery(
+        currentCustomerID = stoi(executeQuery(
             "SELECT customer_id FROM CUSTOMER WHERE user_id = " + to_string(currentUserID) + ";"
-        );
+      )  );
     }
 
 	return role;
@@ -67,52 +67,77 @@ string login()
 
 void registerCustomer()
 {
-
-    string username, password;
-    string id, name, phone, address, license;
+    string username, email, password;
+    string name, phone, address, license;
 
     cout << "\n============================= REGISTER =============================\n";
 
     cout << "Username: ";
     cin >> username;
 
+    string usernameExists = executeQuery(
+        "SELECT user_id FROM USERS WHERE username = '" + username + "';"
+    );
+
+    if (!usernameExists.empty()) {
+        cout << "Username already exists.\n";
+        return;
+    }
+
+    cout << "Email: ";
+    cin >> email;
+
+    string emailExists = executeQuery(
+        "SELECT user_id FROM USERS WHERE email = '" + email + "';"
+    );
+
+    if (!emailExists.empty()) {
+        cout << "Email already exists.\n";
+        return;
+    }
+
     cout << "Password: ";
     password = hiddenPassword();
 
-    cout << "National ID: ";
-    cin >> id;
+    cin.ignore();
 
     cout << "Full Name: ";
-    cin.ignore();
     getline(cin, name);
 
     cout << "Phone Number: ";
     cin >> phone;
 
-    cout << "Address: ";
     cin.ignore();
+
+    cout << "Address: ";
     getline(cin, address);
 
     cout << "License Number: ";
     cin >> license;
 
+    string licenseExists = executeQuery(
+        "SELECT customer_id FROM CUSTOMER WHERE license_number = '" + license + "';"
+    );
+
+    if (!licenseExists.empty()) {
+        cout << "License number already exists.\n";
+        return;
+    }
+
     // 1. Add user
     string query1 =
-        "INSERT INTO USERS (username, password, role) VALUES ('" +
-        username + "', '" + password + "', 'customer');";
+        "INSERT INTO USERS (username, email, password, role) VALUES ('" +
+        username + "', '" + email + "', '" + password + "', 'customer');";
 
     executeInstruction(query1);
 
-    // 2. Get user_id
-    string query2 =
-        "SELECT user_id FROM USERS WHERE username = '" + username + "';";
-
-    string user_id = executeQuery(query2);
+    // 2. Get new user_id
+    string user_id = executeQuery("SELECT LAST_INSERT_ID();");
 
     // 3. Add customer
     string query3 =
-        "INSERT INTO CUSTOMER (customer_id, full_name, phone_number, address, license_number, user_id) VALUES ('" +
-        id + "', '" + name + "', '" + phone + "', '" + address + "', '" + license + "', " + user_id + ");";
+        "INSERT INTO CUSTOMER (full_name, phone_number, address, license_number, user_id) VALUES ('" +
+        name + "', '" + phone + "', '" + address + "', '" + license + "', " + user_id + ");";
 
     executeInstruction(query3);
 
@@ -121,6 +146,7 @@ void registerCustomer()
 }
 
 /////////////////////////////////	 HIDDEN PASSWORD FUNCTION      ///////////////////////
+
 string hiddenPassword() {
     string password;
     char ch;
@@ -172,70 +198,61 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
 ///////////////////////////////      MANAGE CARS      ///////////////////////
 
-    void manageCars() {
-        int choice;
+void manageCars() {
+    int choice;
 
+    do {
+        clearScreen();
 
-        do {
+        cout << "\n====================================\n";
+        cout << "          MANAGE CARS\n";
+        cout << "====================================\n";
+        cout << "1. Add Car\n";
+        cout << "2. View Cars\n";
+        cout << "3. Update Car\n";
+        cout << "4. Delete Car\n";
+        cout << "0. Back\n";
+        cout << "Choose option: ";
+        cin >> choice;
+
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid input. Please enter a number.\n";
+            pauseScreen();
+            continue;
+        }
+
+        switch (choice) {
+        case 1:
+            addCar();
+            break;
+
+        case 2:
             clearScreen();
+            viewCars();
+            pauseScreen();
+            break;
 
-            cout << "\n====================================\n";
-            cout << "          MANAGE CARS\n";
-            cout << "====================================\n";
-            cout << "1. Add Car\n";
-            cout << "2. View Cars\n";
-            cout << "3. Update Car\n";
-            cout << "4. Deactivate Car\n";
-           // cout << "5. View Available Cars\n";
-            cout << "5. Back\n";
-            cout << "Choose option: ";
-            cin >> choice;
+        case 3:
+            updateCar();
+            break;
 
-            if (cin.fail()) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                cout << "Invalid input. Please enter a number.\n";
-                continue;
-			}
+        case 4:
+            deleteCar();
+            break;
 
-            switch (choice) {
-            case 1:
-                addCar();
+        case 0:
+            cout << "Returning to menu...\n";
+            break;
 
-                break;
+        default:
+            cout << "Invalid choice. Please try again.\n";
+            pauseScreen();
+        }
 
-            case 2:
-                clearScreen();
-                viewCars();
-				pauseScreen();
-                break;
-
-            case 3:
-                updateCar();
-
-                break;
-
-            case 4:
-                deactivateCar();
-
-                break;
-
-           // case 5:
-             //   viewAvailableCars();
-               // break;
-
-            case 5:
-                cout << "Returning to menu...\n";
-                break;
-
-            default:
-                cout << "Invalid choice. Please try again.\n";
-                pauseScreen();
-            }
-
-        } while (choice != 5);
-    }
-
+    } while (choice != 0);
+}
 //////////////////////////      ADD CAR      ///////////////////////
 
 
@@ -417,7 +434,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             cout << "6. Update Plate Number\n";
             cout << "7. Update Status\n";
             cout << "8. Update Branch ID\n";
-            cout << "9. Back\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
@@ -521,11 +538,11 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
             case 7: {
                 string status;
-                cout << "Enter new status (available/rented/inactive): ";
+                cout << "Enter new status (available/rented/maintenance): ";
                 cin >> status;
 
-                if (status != "available" && status != "rented" && status != "inactive") {
-                    cout << "Invalid status. Use available, rented, or inactive.\n";
+                if (status != "available" && status != "rented" && status != "maintenance") {
+                    cout << "Invalid status. Use available, rented, or maintenance.\n";
                     break;
                 }
 
@@ -559,7 +576,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 break;
             }
 
-            case 9:
+            case 0:
                 cout << "Returning to Manage Cars menu...\n";
                 break;
 
@@ -567,16 +584,17 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cout << "Invalid choice. Please try again.\n";
             }
 
-        } while (choice != 9);
+        } while (choice != 0);
     }
 
 
-	/////////////////////////////      Deactivate CAR      ///////////////////////
 
-     void deactivateCar() {
+/////////////////////////////      DELETE CAR      ///////////////////////
+
+    void deleteCar() {
         int carID;
 
-        cout << "\n========== DEACTIVATE CAR ==========\n";
+        cout << "\n========== DELETE CAR ==========\n";
         cout << "Enter Car ID: ";
         cin >> carID;
 
@@ -594,17 +612,22 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         );
 
         if (status == "rented") {
-            cout << "Cannot deactivate this car because it is currently rented.\n";
+            cout << "Cannot delete this car because it is currently rented.\n";
             return;
         }
 
-        if (status == "inactive") {
-            cout << "This car is already inactive.\n";
+        string rentalExists = executeQuery(
+            "SELECT rental_id FROM RENTALS WHERE car_id = " + to_string(carID) + " LIMIT 1;"
+        );
+
+        if (!rentalExists.empty()) {
+            cout << "Cannot delete this car because it has rental records.\n";
+            cout << "This is to protect rental history and report accuracy.\n";
             return;
         }
 
         int confirm;
-        cout << "Are you sure you want to deactivate this car? (1 = Yes, 0 = No): ";
+        cout << "Are you sure you want to permanently delete this car? (1 = Yes, 0 = No): ";
         cin >> confirm;
 
         if (confirm != 1) {
@@ -613,79 +636,75 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
 
         string query =
-            "UPDATE CARS SET status = 'inactive' WHERE car_id = " + to_string(carID) + ";";
+            "DELETE FROM CARS WHERE car_id = " + to_string(carID) + ";";
 
         executeInstruction(query);
 
-        cout << "Car deactivated successfully. It will no longer be available for rental.\n";
+        cout << "Car deleted successfully.\n";
     }
-
 
 //-----------------------------------------------------------------------------------------//
 ////////////////////////////      CUSTOMER MANAGEMENT FUNCTIONS      ///////////////////////
 //---------------------------------------------------------------------------------------//
 
 
-///////////////////////////      MANAGE CUSTOMERS      ///////////////////////
+///////////////////////////      MANAGE CUSTOMERS      ///////////////////////.
+
     void manageCustomers() {
         int choice;
 
         do {
             clearScreen();
 
-			cout << "\n====================================\n";
-			cout << "          MANAGE CUSTOMERS\n";
-			cout << "======================================\n";
-			cout << "1. Add Customer\n";
-			cout << "2. View Customers\n";
-			cout << "3. Update Customer\n";
-			cout << "4. Deactivate Customer\n";
-			cout << "5. Back\n";
-			cout << "Choose option: ";
-			cin >> choice;
+            cout << "\n====================================\n";
+            cout << "        MANAGE CUSTOMERS\n";
+            cout << "====================================\n";
+            cout << "1. Add Customer\n";
+            cout << "2. View Customers\n";
+            cout << "3. Update Customer\n";
+            cout << "4. Delete Customer\n";
+            cout << "0. Back\n";
+            cout << "Choose option: ";
+            cin >> choice;
 
             if (cin.fail()) {
                 cin.clear();
                 cin.ignore(1000, '\n');
                 cout << "Invalid input. Please enter a number.\n";
+                pauseScreen();
                 continue;
             }
 
             switch (choice) {
             case 1:
-				clearScreen();
-				addCustomer();
-				pauseScreen();
+                addCustomer();
                 break;
 
             case 2:
-				clearScreen();
+                clearScreen();
                 viewCustomers();
-				pauseScreen();
-				break;
+                pauseScreen();
+                break;
 
             case 3:
-				clearScreen();
                 updateCustomer();
-				pauseScreen();
                 break;
 
             case 4:
-				clearScreen();
-                deactivateCustomer();
-				pauseScreen();
-				break;
-
-            case 5:
-				cout << "Returning to menu...\n";
+                deleteCustomer();
                 break;
+
+            case 0:
+                cout << "Returning to menu...\n";
+                break;
+
             default:
                 cout << "Invalid choice. Please try again.\n";
                 pauseScreen();
-
             }
-        } while (choice != 5);
-	}
+
+        } while (choice != 0);
+    }
 
 
 /////////////////////	  ADD CUSTOMER      ///////////////////////
@@ -694,19 +713,6 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
         cout << "\n========== ADD CUSTOMER ==========\n";
 
-        cout << "Customer ID (National ID/Passport): ";
-        cin >> customerID;
-
-        string exists = executeQuery(
-            "SELECT customer_id FROM CUSTOMER WHERE customer_id = '" + customerID + "';"
-        );
-
-        if (!exists.empty()) {
-            cout << "Customer already exists.\n";
-            return;
-        }
-
-        cin.ignore(1000, '\n');
 
         cout << "Full Name: ";
         getline(cin, fullName);
@@ -723,8 +729,8 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         cin >> license;
 
         string query =
-            "INSERT INTO CUSTOMER (customer_id, full_name, phone_number, address, license_number) "
-            "VALUES ('" + customerID + "', '" + fullName + "', '" + phone + "', '" + address + "', '" + license + "');";
+            "INSERT INTO CUSTOMER (full_name, phone_number, address, license_number) "
+            "VALUES ('" + fullName + "', '" + phone + "', '" + address + "', '" + license + "');";
 
         executeInstruction(query);
 
@@ -741,7 +747,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
                 string query =
                     "SELECT customer_id, full_name, phone_number, address, "
-                    "license_number, status FROM CUSTOMER;";
+                    "license_number FROM CUSTOMER;";
 
                 sql::ResultSet* res = stmt->executeQuery(query);
 
@@ -751,7 +757,6 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                     << setw(18) << "Phone"
                     << setw(20) << "Address"
                     << setw(18) << "License"
-                    << setw(12) << "Status"
                     << endl;
 
                 cout << string(108, '-') << endl;
@@ -764,7 +769,6 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                         << setw(18) << res->getString("phone_number")
                         << setw(20) << res->getString("address")
                         << setw(18) << res->getString("license_number")
-                        << setw(12) << res->getString("status")
                         << endl;
                 }
 
@@ -805,7 +809,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             cout << "2. Update Phone Number\n";
             cout << "3. Update Address\n";
             cout << "4. Update License Number\n";
-            cout << "5. Back\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
@@ -873,7 +877,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 break;
             }
 
-            case 5:
+            case 0:
                 cout << "Returning to Manage Customers menu...\n";
                 break;
 
@@ -881,20 +885,27 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cout << "Invalid choice. Please try again.\n";
             }
 
-        } while (choice != 5);
+        } while (choice != 0);
     }
 
-///////////////  deactivate customer      ///////////////////////
+///////////////  delete customer      ///////////////////////
 
-    void deactivateCustomer() {
-        string customerID;
+    void deleteCustomer() {
+        int customerID;
 
-        cout << "\n========== DEACTIVATE CUSTOMER ==========\n";
+        cout << "\n========== DELETE CUSTOMER ==========\n";
         cout << "Enter Customer ID: ";
         cin >> customerID;
 
+        if (cin.fail() || customerID <= 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid Customer ID.\n";
+            return;
+        }
+
         string exists = executeQuery(
-            "SELECT customer_id FROM CUSTOMER WHERE customer_id = '" + customerID + "';"
+            "SELECT customer_id FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";"
         );
 
         if (exists.empty()) {
@@ -902,18 +913,18 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             return;
         }
 
-        string status = executeQuery(
-            "SELECT status FROM CUSTOMER WHERE customer_id = '" + customerID + "';"
+        string rentalExists = executeQuery(
+            "SELECT rental_id FROM RENTALS WHERE customer_id = " + to_string(customerID) + " LIMIT 1;"
         );
 
-        if (status == "inactive") {
-            cout << "Customer is already inactive.\n";
+        if (!rentalExists.empty()) {
+            cout << "Cannot delete this customer because they have rental records.\n";
+            cout << "This is to protect rental history and report accuracy.\n";
             return;
         }
 
         int confirm;
-
-        cout << "Are you sure you want to deactivate this customer? (1 = Yes, 0 = No): ";
+        cout << "Are you sure you want to permanently delete this customer? (1 = Yes, 0 = No): ";
         cin >> confirm;
 
         if (confirm != 1) {
@@ -922,12 +933,11 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
 
         string query =
-            "UPDATE CUSTOMER SET status = 'inactive' "
-            "WHERE customer_id = '" + customerID + "';";
+            "DELETE FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";";
 
         executeInstruction(query);
 
-        cout << "Customer deactivated successfully.\n";
+        cout << "Customer deleted successfully.\n";
     }
 
 
@@ -935,7 +945,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
     string getCustomerName() {
         return executeQuery(
-            "SELECT full_name FROM CUSTOMER WHERE customer_id = '" + currentCustomerID + "';"
+            "SELECT full_name FROM CUSTOMER WHERE customer_id = " + to_string(currentCustomerID) + ";"
         );
     }
 
@@ -949,21 +959,20 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
             cout << "\n========== MY PROFILE ==========\n\n";
 
-            string customerID = currentCustomerID;
+            int customerID = currentCustomerID;
 
             cout << "Customer ID     : " << customerID << endl;
-            cout << "Full Name       : " << executeQuery("SELECT full_name FROM CUSTOMER WHERE customer_id = '" + customerID + "';") << endl;
-            cout << "Phone Number    : " << executeQuery("SELECT phone_number FROM CUSTOMER WHERE customer_id = '" + customerID + "';") << endl;
-            cout << "Address         : " << executeQuery("SELECT address FROM CUSTOMER WHERE customer_id = '" + customerID + "';") << endl;
-            cout << "License Number  : " << executeQuery("SELECT license_number FROM CUSTOMER WHERE customer_id = '" + customerID + "';") << endl;
-            cout << "Status          : " << executeQuery("SELECT status FROM CUSTOMER WHERE customer_id = '" + customerID + "';") << endl;
+            cout << "Full Name       : " << executeQuery("SELECT full_name FROM CUSTOMER WHERE customer_id =" + to_string(customerID) + ";") << endl;
+            cout << "Phone Number    : " << executeQuery("SELECT phone_number FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";") << endl;
+            cout << "Address         : " << executeQuery("SELECT address FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";") << endl;
+            cout << "License Number  : " << executeQuery("SELECT license_number FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";") << endl;
 
             cout << "\n--------------------------------\n";
             cout << "1. Update Full Name\n";
             cout << "2. Update Phone Number\n";
             cout << "3. Update Address\n";
             cout << "4. Update License Number\n";
-            cout << "5. Back\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
@@ -977,7 +986,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 getline(cin, name);
 
                 query = "UPDATE CUSTOMER SET full_name = '" + name +
-                    "' WHERE customer_id = '" + customerID + "';";
+                    "' WHERE customer_id = " + to_string(customerID) + ";";
                 executeInstruction(query);
                 cout << "Full name updated successfully.\n";
                 pauseScreen();
@@ -990,7 +999,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cin >> phone;
 
                 query = "UPDATE CUSTOMER SET phone_number = '" + phone +
-                    "' WHERE customer_id = '" + customerID + "';";
+                    "' WHERE customer_id = " + to_string(customerID) + ";";
                 executeInstruction(query);
                 cout << "Phone number updated successfully.\n";
                 pauseScreen();
@@ -1004,7 +1013,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 getline(cin, address);
 
                 query = "UPDATE CUSTOMER SET address = '" + address +
-                    "' WHERE customer_id = '" + customerID + "';";
+                    "' WHERE customer_id = " + to_string(customerID) + ";";
                 executeInstruction(query);
                 cout << "Address updated successfully.\n";
                 pauseScreen();
@@ -1017,7 +1026,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cin >> license;
 
                 query = "UPDATE CUSTOMER SET license_number = '" + license +
-                    "' WHERE customer_id = '" + customerID + "';";
+                    "' WHERE customer_id = " + to_string(customerID) + ";";
                 executeInstruction(query);
                 cout << "License number updated successfully.\n";
                 pauseScreen();
@@ -1033,7 +1042,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 pauseScreen();
             }
 
-        } while (choice != 5);
+        } while (choice != 0);
     }
 
 ///////////////////  view customer rental history      ///////////////////////
@@ -1049,7 +1058,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 "R.days, R.total_price, R.rental_status "
                 "FROM RENTALS R "
                 "JOIN CARS C ON R.car_id = C.car_id "
-                "WHERE R.customer_id = '" + currentCustomerID + "' "
+                "WHERE R.customer_id = " + to_string(currentCustomerID) + ";"
                 "ORDER BY R.rental_date DESC;";
 
             sql::ResultSet* res = stmt->executeQuery(query);
@@ -1103,7 +1112,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
             string query =
                 "SELECT customer_id, full_name, phone_number, license_number "
-                "FROM CUSTOMER WHERE customer_id = '" + currentCustomerID + "';";
+                "FROM CUSTOMER WHERE customer_id = " + to_string(currentCustomerID) + ";";
 
             sql::ResultSet* res = stmt->executeQuery(query);
 
@@ -1146,8 +1155,8 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             cout << "1. Add User\n";
             cout << "2. View Users\n";
             cout << "3. Update User Role\n";
-            cout << "4. Deactivate User\n";
-            cout << "5. Back\n";
+            cout << "4. Delete User\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
@@ -1180,11 +1189,11 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
             case 4:
                 clearScreen();
-                deactivateUser();
+                deleteUser();
                 pauseScreen();
                 break;
 
-            case 5:
+            case 0 :
                 cout << "Returning...\n";
                 break;
 
@@ -1193,7 +1202,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 pauseScreen();
             }
 
-        } while (choice != 5);
+        } while (choice != 0);
     }
 
 
@@ -1201,7 +1210,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
     void addUser() {
 
-        string username, password, role;
+        string username, email, password, role;
 
         cout << "\n========== ADD USER ==========\n";
 
@@ -1217,6 +1226,18 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             return;
         }
 
+        cout << "Email: ";
+        cin >> email;
+
+        string emailExists = executeQuery(
+            "SELECT user_id FROM USERS WHERE email = '" + email + "';"
+        );
+
+        if (!emailExists.empty()) {
+            cout << "Email already exists.\n";
+            return;
+        }
+
         cout << "Password: ";
         password = hiddenPassword();
 
@@ -1229,8 +1250,8 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
 
         string query =
-            "INSERT INTO USERS (username, password, role) VALUES ('" +
-            username + "', '" + password + "', '" + role + "');";
+            "INSERT INTO USERS (username, email, password, role) VALUES ('" +
+            username + "', '" + email + "', '" + password + "', '" + role + "');";
 
         executeInstruction(query);
 
@@ -1246,23 +1267,23 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             sql::Statement* stmt = globalCon->createStatement();
 
             string query =
-                "SELECT user_id, username, role, status FROM USERS;";
+                "SELECT user_id, username, email, role FROM USERS;";
             sql::ResultSet* res = stmt->executeQuery(query);
 
             cout << left
                 << setw(10) << "User ID"
                 << setw(20) << "Username"
+                << setw(30) << "Email"
                 << setw(15) << "Role"
-				<< setw(15) << "Status"
                 << endl;
 
-            cout << string(45, '-') << endl;
+            cout << string(75, '-') << endl;
             while (res->next()) {
                 cout << left
                     << setw(10) << res->getString("user_id")
                     << setw(20) << res->getString("username")
+                    << setw(30) << res->getString("email")
                     << setw(15) << res->getString("role")
-                    << setw(15) << res->getString("status")
                     << endl;
             }
 
@@ -1274,7 +1295,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
 	}
 
-	//////////////////// 	Update User     ///////////////////////
+    //////////////////// 	Update User     ///////////////////////
 
     void updateUser() {
         int userID;
@@ -1282,6 +1303,13 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         cout << "\n========== UPDATE USER ==========\n";
         cout << "Enter User ID: ";
         cin >> userID;
+
+        if (cin.fail() || userID <= 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid User ID.\n";
+            return;
+        }
 
         string exists = executeQuery(
             "SELECT user_id FROM USERS WHERE user_id = " + to_string(userID) + ";"
@@ -1293,18 +1321,24 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
 
         int choice;
-
         do {
             cout << "\n========== UPDATE USER MENU ==========\n";
             cout << "1. Update Username\n";
-            cout << "2. Update Password\n";
-            cout << "3. Update Role\n";
-            cout << "4. Back\n";
+            cout << "2. Update Email\n";
+            cout << "3. Update Password\n";
+            cout << "4. Update Role\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
-            string query;
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                cout << "Invalid input.\n";
+                continue;
+            }
 
+            string query;
             switch (choice) {
             case 1: {
                 string username;
@@ -1313,7 +1347,8 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cin >> username;
 
                 string usernameExists = executeQuery(
-                    "SELECT user_id FROM USERS WHERE username = '" + username + "';"
+                    "SELECT user_id FROM USERS WHERE username = '" + username +
+                    "' AND user_id != " + to_string(userID) + ";"
                 );
 
                 if (!usernameExists.empty()) {
@@ -1331,6 +1366,31 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             }
 
             case 2: {
+                string email;
+
+                cout << "Enter new email: ";
+                cin >> email;
+
+                string emailExists = executeQuery(
+                    "SELECT user_id FROM USERS WHERE email = '" + email +
+                    "' AND user_id != " + to_string(userID) + ";"
+                );
+
+                if (!emailExists.empty()) {
+                    cout << "Email already exists.\n";
+                    break;
+                }
+
+                query =
+                    "UPDATE USERS SET email = '" + email +
+                    "' WHERE user_id = " + to_string(userID) + ";";
+
+                executeInstruction(query);
+                cout << "Email updated successfully.\n";
+                break;
+            }
+
+            case 3: {
                 string password;
 
                 cout << "Enter new password: ";
@@ -1345,7 +1405,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 break;
             }
 
-            case 3: {
+            case 4: {
                 string role;
 
                 cout << "Enter new role (admin/staff/customer): ";
@@ -1365,7 +1425,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 break;
             }
 
-            case 4:
+            case 0:
                 cout << "Returning to Manage Users menu...\n";
                 break;
 
@@ -1373,18 +1433,23 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 cout << "Invalid choice. Please try again.\n";
             }
 
-        } while (choice != 4);
+        } while (choice != 0);
     }
 
-	/////////////////////  Deactivate User     ///////////////////////  
+    /////////////////////////////      DELETE USER      ///////////////////////
 
-    void deactivateUser() {
+    void deleteUser() {
         int userID;
-        string newStatus;
 
-        cout << "\n========== UPDATE USER STATUS ==========\n";
+        cout << "\n========== DELETE USER ==========\n";
         cout << "Enter User ID: ";
         cin >> userID;
+        if (cin.fail() || userID <= 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid User ID.\n";
+            return;
+        }
 
         string exists = executeQuery(
             "SELECT user_id FROM USERS WHERE user_id = " + to_string(userID) + ";"
@@ -1395,21 +1460,35 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             return;
         }
 
-        cout << "Enter new status (active/inactive): ";
-        cin >> newStatus;
+        string role = executeQuery(
+            "SELECT role FROM USERS WHERE user_id = " + to_string(userID) + ";"
+        );
 
-        if (newStatus != "active" && newStatus != "inactive") {
-            cout << "Invalid status. Use active or inactive.\n";
+        if (role == "admin") {
+            cout << "Admin accounts cannot be deleted.\n";
+            return;
+        }
+
+        if (userID == currentUserID) {
+            cout << "You cannot delete your own account while logged in.\n";
+            return;
+        }
+
+        int confirm;
+        cout << "Are you sure you want to permanently delete this user? (1 = Yes, 0 = No): ";
+        cin >> confirm;
+
+        if (confirm != 1) {
+            cout << "Operation cancelled.\n";
             return;
         }
 
         string query =
-            "UPDATE USERS SET status = '" + newStatus +
-            "' WHERE user_id = " + to_string(userID) + ";";
+            "DELETE FROM USERS WHERE user_id = " + to_string(userID) + ";";
 
         executeInstruction(query);
 
-        cout << "User status updated successfully.\n";
+        cout << "User deleted successfully.\n";
     }
 
 	//-----------------------------------------------------------------------------------------//
@@ -1427,12 +1506,12 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             cout << "====================================\n";
             cout << "1. Create Rental\n";
             cout << "2. Return Car\n";
-            cout << "3. View Rentals\n";
-            cout << "4. Update Rental\n";
-            cout << "5. Cancel Rental\n";
+            cout << "3. Update Rental\n";
+            cout << "4. Cancel Rental\n";
+            cout << "5. View Rentals\n";
             cout << "6. View Invoices\n";
             cout << "7. View Available Cars\n";
-            cout << "8. Back\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
             if (cin.fail()) {
@@ -1457,19 +1536,19 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
             case 3: 
                 clearScreen();
-                viewRentals();
+                updateRental();
                 pauseScreen();
                 break;
 
             case 4:
                 clearScreen();
-                updateRental();
+                cancelRental();
                 pauseScreen();
                 break;
 
             case 5:
                 clearScreen();
-                cancelRental();
+                viewRentals();
                 pauseScreen();
                 break;
 
@@ -1485,39 +1564,47 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 pauseScreen();
                 break;
 
-            case 8:
+            case 0:
                 cout << "Returning...\n";
                 break;
 
             default: cout << "Invalid choice.\n"; pauseScreen();
             }
 
-        } while (choice != 8);
+        } while (choice != 0);
     }
 
-    //////////////////////// Rent car ///////////////////////////
+   //////////////////////// Rent car ///////////////////////////
 
     void rentCar() {
-        string customerID, paymentMethod;
-        int carID, days;
+        string paymentMethod;
+        int customerID, carID, days;
 
         cout << "\n========== CREATE RENTAL ==========\n";
 
-        if (!currentCustomerID.empty()) {
+        // If logged in as customer
+        if (currentCustomerID > 0) {
             customerID = currentCustomerID;
             showCustomerRentalInfo();
         }
         else {
             cout << "Enter Customer ID: ";
             cin >> customerID;
+
+            if (cin.fail() || customerID <= 0) {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                cout << "Invalid Customer ID.\n";
+                return;
+            }
         }
 
         string customerExists = executeQuery(
-            "SELECT customer_id FROM CUSTOMER WHERE customer_id = '" + customerID + "' AND status = 'active';"
+            "SELECT customer_id FROM CUSTOMER WHERE customer_id = " + to_string(customerID) + ";"
         );
 
         if (customerExists.empty()) {
-            cout << "Customer not found or inactive.\n";
+            cout << "Customer not found.\n";
             return;
         }
 
@@ -1525,6 +1612,13 @@ double calculateLateFine(double pricePerDay, int lateDays) {
 
         cout << "\nEnter Car ID: ";
         cin >> carID;
+
+        if (cin.fail() || carID <= 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid Car ID.\n";
+            return;
+        }
 
         string carStatus = executeQuery(
             "SELECT status FROM CARS WHERE car_id = " + to_string(carID) + ";"
@@ -1554,6 +1648,11 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             "SELECT price_per_day FROM CARS WHERE car_id = " + to_string(carID) + ";"
         );
 
+        if (priceStr.empty()) {
+            cout << "Car price not found.\n";
+            return;
+        }
+
         double pricePerDay = stod(priceStr);
         double totalPrice = calculateRentalPrice(pricePerDay, days);
 
@@ -1579,8 +1678,8 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         string rentalQuery =
             "INSERT INTO RENTALS (rental_date, return_date, days, total_price, customer_id, car_id, rental_status) "
             "VALUES (CURDATE(), DATE_ADD(CURDATE(), INTERVAL " + to_string(days) +
-            " DAY), " + to_string(days) + ", " + to_string(totalPrice) + ", '" +
-            customerID + "', " + to_string(carID) + ", 'active');";
+            " DAY), " + to_string(days) + ", " + to_string(totalPrice) + ", " +
+            to_string(customerID) + ", " + to_string(carID) + ", 'active');";
 
         executeInstruction(rentalQuery);
 
@@ -1731,7 +1830,9 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         }
     }
 
-    /////////////// update Rental ///////////////
+    /////////////// Update  rental duration only. ///////////////
+
+/////////////// UPDATE RENTAL ///////////////
 
     void updateRental() {
 
@@ -1740,6 +1841,13 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         cout << "\n========== UPDATE RENTAL ==========\n";
         cout << "Enter Rental ID: ";
         cin >> rentalID;
+
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid input.\n";
+            return;
+        }
 
         string status = executeQuery(
             "SELECT rental_status FROM RENTALS WHERE rental_id = " + to_string(rentalID) + ";"
@@ -1771,9 +1879,19 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             "SELECT car_id FROM RENTALS WHERE rental_id = " + to_string(rentalID) + ";"
         );
 
+        if (carID.empty()) {
+            cout << "Car ID not found for this rental.\n";
+            return;
+        }
+
         string priceStr = executeQuery(
             "SELECT price_per_day FROM CARS WHERE car_id = " + carID + ";"
         );
+
+        if (priceStr.empty()) {
+            cout << "Car price not found.\n";
+            return;
+        }
 
         double pricePerDay = stod(priceStr);
         double totalPrice = calculateRentalPrice(pricePerDay, newDays);
@@ -1916,7 +2034,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             cout << "3. Yearly Revenue Report\n";
             cout << "4. Total Rentals Report\n";
             cout << "5. Most Rented Car Report\n";
-            cout << "6. Back\n";
+            cout << "0. Back\n";
             cout << "Choose option: ";
             cin >> choice;
 
@@ -1959,7 +2077,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 pauseScreen();
                 break;
 
-            case 6:
+            case 0:
                 cout << "Returning...\n";
                 break;
 
@@ -1968,7 +2086,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
                 pauseScreen();
             }
 
-        } while (choice != 6);
+        } while (choice != 0);
     }
 
 	/////////////////////// Helper function to get report value with NULL handling  ///////////////////////
@@ -1998,7 +2116,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
         string totalCars = getReportValue("SELECT COUNT(*) FROM CARS;");
         string availableCars = getReportValue("SELECT COUNT(*) FROM CARS WHERE status = 'available';");
         string rentedCars = getReportValue("SELECT COUNT(*) FROM CARS WHERE status = 'rented';");
-        string inactiveCars = getReportValue("SELECT COUNT(*) FROM CARS WHERE status = 'inactive';");
+        string maintenanceCars = getReportValue("SELECT COUNT(*) FROM CARS WHERE status = 'maintenance';");
 
         string totalRentals = getReportValue("SELECT COUNT(*) FROM RENTALS;");
         string activeRentals = getReportValue("SELECT COUNT(*) FROM RENTALS WHERE rental_status = 'active';");
@@ -2054,7 +2172,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             printReportLine(cout, "Total Cars", totalCars);
             printReportLine(cout, "Available Cars", availableCars);
             printReportLine(cout, "Rented Cars", rentedCars);
-            printReportLine(cout, "Inactive Cars", inactiveCars);
+            printReportLine(cout, "maintenance Cars", maintenanceCars);
 
             cout << "\nRENTALS\n";
             cout << "------------------------------------------------\n";
@@ -2279,7 +2397,7 @@ double calculateLateFine(double pricePerDay, int lateDays) {
             "JOIN RENTALS R ON I.rental_id = R.rental_id "
             "JOIN CUSTOMER CU ON R.customer_id = CU.customer_id "
             "JOIN CARS C ON R.car_id = C.car_id "
-            "WHERE R.customer_id = '" + currentCustomerID + "';";
+            "WHERE R.customer_id = " + to_string(currentCustomerID) + ";";
 
         sql::ResultSet* res = stmt->executeQuery(query);
 
